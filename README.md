@@ -1,9 +1,9 @@
-# 🚀 iar-api : Service Web d'Indexation Sujet RAMEAU
+# 🚀 indexation-sujet-api : Service Web d'Indexation Sujet RAMEAU
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/abesesr/iar.svg)](https://hub.docker.com/r/abesesr/iar/)
-[![Buildx Publish](https://github.com/abes-esr/iar-api/actions/workflows/buildx-pubtodockerhub.yml/badge.svg)](https://github.com/abes-esr/iar-api/actions/workflows/buildx-pubtodockerhub.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/abesesr/indexation-sujet.svg)](https://hub.docker.com/r/abesesr/indexation-sujet/)
+[![Buildx Publish](https://github.com/abes-esr/indexation-sujet-api/actions/workflows/buildx-pubtodockerhub.yml/badge.svg)](https://github.com/abes-esr/indexation-sujet-api/actions/workflows/buildx-pubtodockerhub.yml)
 
-> 📌 **Rôle central du dépôt `iar-docker`** : Le dépôt [**iar-docker**](https://github.com/abes-esr/iar-docker) centralise l'état et le stockage de tous les services de la plateforme. En cas d'incident majeur ou de réinstallation complète d'un serveur, la restauration est opérée depuis ce dossier. Pour la restauration de l'application, veuillez vous référer à sa documentation : [iar-docker - Procédure de restauration globale](https://github.com/abes-esr/iar-docker#8-procédure-de-restauration-globale).
+> 📌 **Rôle central du dépôt `indexation-sujet-docker`** : Le dépôt [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker) centralise l'état et le stockage de tous les services de la plateforme. En cas d'incident majeur ou de réinstallation complète d'un serveur, la restauration est opérée depuis ce dossier. Pour la restauration de l'application, veuillez vous référer à sa documentation : [indexation-sujet-docker - Procédure de restauration globale](https://github.com/abes-esr/indexation-sujet-docker#8-procédure-de-restauration-globale).
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## 1. Description brève du projet
 
-**`iar-api`** est le service web backend du projet **IAR** (**I**ndexation **A**utomatique **R**AMEAU), conçu et maintenu par l'**ABES** (Agence Bibliographique de l'Enseignement Supérieur).
+**`indexation-sujet-api`** est le service web backend du projet **INDEXATION SUJET** (**I**ndexation **A**utomatique **R**AMEAU), conçu et maintenu par l'**ABES** (Agence Bibliographique de l'Enseignement Supérieur).
 
 Développé avec **FastAPI**, ce composant propose une API REST haute performance qui suggère automatiquement des vedettes-matières **RAMEAU** Unimarc (zone `606`) pour l'indexation de notices bibliographiques (titre, résumé, PPN). Il combine la recherche sémantique vectorielle dense via **Qdrant**, l'extraction multi-modèles d'embeddings Sentence-Transformers (_Victor 1, 2, 3_), le réordonnancement par Cross-Encoder et le filtrage des faux-positifs par Modèle de Langage (_LLM Llama 3.1_).
 
@@ -31,16 +31,16 @@ Développé avec **FastAPI**, ce composant propose une API REST haute performanc
 
 ## 2. Liens vers les autres parties du projet
 
-Le projet IAR est composé de plusieurs modules interdépendants hébergés sur l'organisation [abes-esr](https://github.com/abes-esr) :
+Le projet INDEXATION SUJET est composé de plusieurs modules interdépendants hébergés sur l'organisation [abes-esr](https://github.com/abes-esr) :
 
-| Dépôt GitHub                                                           | Rôle & Description                                                                                                                |
-| :--------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| [**iar-docker**](https://github.com/abes-esr/iar-docker)               | Configuration Docker Compose pour le déploiement complet des conteneurs de la plateforme (API, Qdrant, Ollama/vLLM).      |
-| [**iar-api**](https://github.com/abes-esr/iar-api)                     | Ce dépôt : API FastAPI exposant le service de suggestion d'indexation sujet.                                                      |
-| [**iar-vectorisation**](https://github.com/abes-esr/iar-vectorisation) | Scripts de génération des vecteurs d'embeddings RAMEAU et de peuplement des collections Qdrant.                                   |
-| [**iar-batch-docker**](https://github.com/abes-esr/iar-batch-docker)   | Déploiement Docker pour les traitements par lots et les interfaces de mise à jour des données.                                    |
-| [**iar-batch-dump**](https://github.com/abes-esr/iar-batch-dump)       | Extraction, transformation et génération des dumps de données d'autorités RAMEAU et notices Sudoc.                                |
-| [**iar-script-winibw**](https://github.com/abes-esr/iar-script-winibw) | Script client (VBScript) s'intégrant au logiciel de catalogage **WinIBW** pour interroger l'API depuis le poste des catalogueurs. |
+| Dépôt GitHub                                                                                     | Rôle & Description                                                                                                                |
+| :----------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker)               | Configuration Docker Compose pour le déploiement complet des conteneurs de la plateforme (API, Qdrant, Ollama/vLLM).              |
+| [**indexation-sujet-api**](https://github.com/abes-esr/indexation-sujet-api)                     | Ce dépôt : API FastAPI exposant le service de suggestion d'indexation sujet.                                                      |
+| [**indexation-sujet-vectorisation**](https://github.com/abes-esr/indexation-sujet-vectorisation) | Scripts de génération des vecteurs d'embeddings RAMEAU et de peuplement des collections Qdrant.                                   |
+| [**indexation-sujet-batch-docker**](https://github.com/abes-esr/indexation-sujet-batch-docker)   | Déploiement Docker pour les traitements par lots et les interfaces de mise à jour des données.                                    |
+| [**indexation-sujet-batch-dump**](https://github.com/abes-esr/indexation-sujet-batch-dump)       | Extraction, transformation et génération des dumps de données d'autorités RAMEAU et notices Sudoc.                                |
+| [**indexation-sujet-script-winibw**](https://github.com/abes-esr/indexation-sujet-script-winibw) | Script client (VBScript) s'intégrant au logiciel de catalogage **WinIBW** pour interroger l'API depuis le poste des catalogueurs. |
 
 ---
 
@@ -49,17 +49,17 @@ Le projet IAR est composé de plusieurs modules interdépendants hébergés sur 
 ### Flux entrants :
 
 - **Requêtes HTTP GET** depuis :
-  - Les clients de catalogage **WinIBW** (via [iar-script-winibw](https://github.com/abes-esr/iar-script-winibw)).
+  - Les clients de catalogage **WinIBW** (via [indexation-sujet-script-winibw](https://github.com/abes-esr/indexation-sujet-script-winibw)).
   - Des applications web ou scripts tiers de l'ABES (Sudoc, interfaces d'indexation).
   - La sonde de supervision HTTP (requêtes périodiques sur `/health`).
 - **Fichiers de données (Volumes locaux / montages)** :
-  - Fichiers d'autorités RAMEAU dans [`volumes/csv/`](./volumes/csv/) générés par [iar-batch-dump](https://github.com/abes-esr/iar-batch-dump) : `rameau_ancestors_df.csv`, `rameau_parents.csv`, `rameau_subdivisionsONLY.csv`.
+  - Fichiers d'autorités RAMEAU dans [`volumes/csv/`](./volumes/csv/) générés par [indexation-sujet-batch-dump](https://github.com/abes-esr/indexation-sujet-batch-dump) : `rameau_ancestors_df.csv`, `rameau_parents.csv`, `rameau_subdivisionsONLY.csv`.
 
 ### Flux sortants :
 
 - **Réponses HTTP REST** : Flux de vedettes RAMEAU Unimarc 606 au format JSON structuré ou texte/HTML plat ou hiérarchique.
 - **Requêtes gRPC / REST vers Qdrant** (port `6333`) : Recherche de similarité par cosinus sur les collections de vecteurs.
-- **Requêtes HTTP REST vers le serveur LLM** (compatible OpenAI API, ex. vLLM / Ollama sur `IAR_LLM_URL`) : Filtrage sémantique des propositions.
+- **Requêtes HTTP REST vers le serveur LLM** (compatible OpenAI API, ex. vLLM / Ollama sur `INDEXATION_SUJET_LLM_URL`) : Filtrage sémantique des propositions.
 - **Flux de logs (stdout/stderr)** : Traitement et collecte centralisée des logs applicatifs par Dozzle et le puits de logs Kibana de l'ABES.
 
 ---
@@ -115,17 +115,17 @@ Documentation interactive Swagger UI et ReDoc générée automatiquement par Fas
 
 Les variables d'environnement sont gérées de manière centralisée par [`src/config.py`](./src/config.py) et définies dans le fichier `.env` (dérivé de [`.env-dist`](./.env-dist)).
 
-| Variable            | Description                                                                       | Exemple / Défaut                           |
-| :------------------ | :-------------------------------------------------------------------------------- | :----------------------------------------- |
-| `IAR_LLM_URL`       | URL de base de l'API LLM (compatible OpenAI API) pour le filtrage sémantique.     | `localhost` (ou `http://iar-llm:11434/v1`) |
-| `IAR_LLM_KEY`       | Clé d'API secrète pour s'authentifier auprès du service LLM.                      | -                                          |
-| `IAR_LLM_MODEL`     | Nom du modèle LLM à utiliser pour éliminer les mots-clés intrus.                  | `llama-3.1-8b`                             |
-| `IAR_QDRANT_HOST`   | Hôte du serveur de base de données vectorielle Qdrant.                            | `localhost` (ou `iar-qdrant`)              |
-| `IAR_QDRANT_PORT`   | Port d'écoute de l'instance Qdrant.                                               | `6333`                                     |
-| `IAR_API_HTTP_HOST` | Adresse d'écoute du serveur FastAPI / Uvicorn.                                    | `0.0.0.0`                                  |
-| `IAR_API_HTTP_PORT` | Port d'écoute de l'API.                                                           | `8071`                                     |
-| `IAR_CORS_ORIGINS`  | Liste des domaines autorisés pour les requêtes Cross-Origin (CORS).               | `*`                                        |
-| `ENABLE_GPU`        | Active l'accélération matérielle CUDA si une carte GPU compatible est disponible. | `true`                                     |
+| Variable                         | Description                                                                       | Exemple / Défaut                                        |
+| :------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| `INDEXATION_SUJET_LLM_URL`       | URL de base de l'API LLM (compatible OpenAI API) pour le filtrage sémantique.     | `localhost` (ou `http://indexation-sujet-llm:11434/v1`) |
+| `INDEXATION_SUJET_LLM_KEY`       | Clé d'API secrète pour s'authentifier auprès du service LLM.                      | -                                                       |
+| `INDEXATION_SUJET_LLM_MODEL`     | Nom du modèle LLM à utiliser pour éliminer les mots-clés intrus.                  | `llama-3.1-8b`                                          |
+| `INDEXATION_SUJET_QDRANT_HOST`   | Hôte du serveur de base de données vectorielle Qdrant.                            | `localhost` (ou `indexation-sujet-qdrant`)              |
+| `INDEXATION_SUJET_QDRANT_PORT`   | Port d'écoute de l'instance Qdrant.                                               | `6333`                                                  |
+| `INDEXATION_SUJET_API_HTTP_HOST` | Adresse d'écoute du serveur FastAPI / Uvicorn.                                    | `0.0.0.0`                                               |
+| `INDEXATION_SUJET_API_HTTP_PORT` | Port d'écoute de l'API.                                                           | `8071`                                                  |
+| `INDEXATION_SUJET_CORS_ORIGINS`  | Liste des domaines autorisés pour les requêtes Cross-Origin (CORS).               | `*`                                                     |
+| `ENABLE_GPU`                     | Active l'accélération matérielle CUDA si une carte GPU compatible est disponible. | `true`                                                  |
 
 > 🔒 **Consigne de sécurité** : Ne jamais versionner le fichier `.env` contenant les identifiants ou clés de production.
 
@@ -136,13 +136,13 @@ Les variables d'environnement sont gérées de manière centralisée par [`src/c
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                         CLIENTS & IHM                                           │
-│   • WinIBW (Catalogueurs Sudoc via iar-script-winibw)                                           │
+│   • WinIBW (Catalogueurs Sudoc via indexation-sujet-script-winibw)                                           │
 │   • Applications Web & Navigateurs (/rameau ou API externe)                                     │
 └───────────────────────────────────────────────┬─────────────────────────────────────────────────┘
                                                 │ Requête HTTP GET /subject_indexation/
                                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  iar-api (FastAPI : Port 8071)                                  │
+│                                  indexation-sujet-api (FastAPI : Port 8071)                                  │
 │                                                                                                 │
 │  1. ROUTEUR & FILTRES :                                                                         │
 │     • Validation RCR (liste blanche des établissements testeurs)                                │
@@ -192,32 +192,32 @@ Les variables d'environnement sont gérées de manière centralisée par [`src/c
 
 ## 7. Procédure de déploiement / d'installation
 
-> ℹ️ **Architecture de déploiement ABES** : Sur les serveurs de test et de production (`donut-test` et `donut-prod`), seul le dépôt [**iar-docker**](https://github.com/abes-esr/iar-docker) est installé (dans `/opt/pod/iar-docker/`). Il instancie l'image Docker précompilée de l'API (`abesesr/iar:*-api`). Les procédures ci-dessous décrivent le build local ou l'exécution autonome du code source pour les développeurs.
+> ℹ️ **Architecture de déploiement ABES** : Sur les serveurs de test et de production (`donut-test` et `donut-prod`), seul le dépôt [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker) est installé (dans `/opt/pod/indexation-sujet-docker/`). Il instancie l'image Docker précompilée de l'API (`abesesr/indexation-sujet:*-api`). Les procédures ci-dessous décrivent le build local ou l'exécution autonome du code source pour les développeurs.
 
 ### A. Déploiement avec Docker (Recommandé)
 
-Le projet s'exécute de façon conteneurisée via le [`Dockerfile`](./Dockerfile) de l'API ou au sein de la pile globale [iar-docker](https://github.com/abes-esr/iar-docker).
+Le projet s'exécute de façon conteneurisée via le [`Dockerfile`](./Dockerfile) de l'API ou au sein de la pile globale [indexation-sujet-docker](https://github.com/abes-esr/indexation-sujet-docker).
 
 ```bash
 # 1. Cloner le dépôt sur la machine hôte
-git clone https://github.com/abes-esr/iar-api.git
-cd iar-api
+git clone https://github.com/abes-esr/indexation-sujet-api.git
+cd indexation-sujet-api
 
 # 2. Copier le fichier d'environnement
 cp .env-dist .env
 # 3. Éditer le fichier .env selon l'environnement ciblé (localhost, test ou prod)
 
 # 4. Construire l'image Docker de production
-docker build -t abesesr/iar:develop-api --target api-image .
+docker build -t abesesr/indexation-sujet:develop-api --target api-image .
 
 # 5. Lancer le conteneur avec montage des volumes de données CSV
 docker run -d \
-  --name iar-api \
+  --name indexation-sujet-api \
   --restart unless-stopped \
   -p 8071:8071 \
   --env-file .env \
   -v $(pwd)/volumes/csv:/app/data/csv:ro \
-  abesesr/iar:develop-api
+  abesesr/indexation-sujet:develop-api
 ```
 
 ### B. Installation locale pour le développement
@@ -254,10 +254,10 @@ python -m uvicorn src.rameau:app --host 0.0.0.0 --port 8071 --reload
 
 ```bash
 # Vérifier l'état du conteneur
-docker ps -f name=iar-api
+docker ps -f name=indexation-sujet-api
 
 # Visualiser les 100 dernières lignes de logs en direct
-docker logs -f --tail=100 iar-api
+docker logs -f --tail=100 indexation-sujet-api
 ```
 
 ### 2. Sonde de santé applicative (Healthcheck)
