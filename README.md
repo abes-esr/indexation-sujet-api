@@ -39,7 +39,7 @@ Le projet INDEXATION SUJET est composé de plusieurs modules interdépendants h�
 | [**indexation-sujet-api**](https://github.com/abes-esr/indexation-sujet-api)                     | Ce dépôt : API FastAPI exposant le service de suggestion d'indexation sujet.                                                      |
 | [**indexation-sujet-vectorisation**](https://github.com/abes-esr/indexation-sujet-vectorisation) | Scripts de génération des vecteurs d'embeddings RAMEAU et de peuplement des collections Qdrant.                                   |
 | [**indexation-sujet-batch-docker**](https://github.com/abes-esr/indexation-sujet-batch-docker)   | Déploiement Docker pour les traitements par lots et les interfaces de mise à jour des données.                                    |
-| [**indexation-sujet-batch-dump**](https://github.com/abes-esr/indexation-sujet-batch-dump)       | Extraction, transformation et génération des dumps de données d'autorités RAMEAU et notices Sudoc.                                |
+| [**indexation-sujet-batch**](https://github.com/abes-esr/indexation-sujet-batch)                 | Extraction, transformation et génération des dumps de données d'autorités RAMEAU et notices Sudoc.                                |
 | [**indexation-sujet-script-winibw**](https://github.com/abes-esr/indexation-sujet-script-winibw) | Script client (VBScript) s'intégrant au logiciel de catalogage **WinIBW** pour interroger l'API depuis le poste des catalogueurs. |
 
 ---
@@ -53,7 +53,7 @@ Le projet INDEXATION SUJET est composé de plusieurs modules interdépendants h�
   - Des applications web ou scripts tiers de l'ABES (Sudoc, interfaces d'indexation).
   - La sonde de supervision HTTP (requêtes périodiques sur `/health`).
 - **Fichiers de données (Volumes locaux / montages)** :
-  - Fichiers d'autorités RAMEAU dans [`volumes/csv/`](./volumes/csv/) générés par [indexation-sujet-batch-dump](https://github.com/abes-esr/indexation-sujet-batch-dump) : `rameau_ancestors_df.csv`, `rameau_parents.csv`, `rameau_subdivisionsONLY.csv`.
+  - Fichiers d'autorités RAMEAU dans [`volumes/csv/`](./volumes/csv/) générés par [indexation-sujet-batch](https://github.com/abes-esr/indexation-sujet-batch) : `rameau_ancestors_df.csv`, `rameau_parents.csv`, `rameau_subdivisionsONLY.csv`.
 
 ### Flux sortants :
 
