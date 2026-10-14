@@ -1,201 +1,326 @@
-# 🚀 Service Web d'Indexation Sujet RAMEAU (API FastAPI)
+# 🚀 indexation-sujet-api : Service Web d'Indexation Sujet RAMEAU
 
-Ce composant backend constitue le cœur du projet **RAMEAU** de l'ABES (Agence Bibliographique de l'Enseignement Supérieur). Il fournit un service web REST (exposé via **FastAPI**) permettant de suggérer des vedettes-matières **RAMEAU** Unimarc (zone `606`) enrichies par de l'intelligence artificielle à partir des métadonnées d'un document (titre, résumé, identifiant PPN).
+[![Docker Pulls](https://img.shields.io/docker/pulls/abesesr/indexation-sujet.svg)](https://hub.docker.com/r/abesesr/indexation-sujet/)
+[![Buildx Publish](https://github.com/abes-esr/indexation-sujet-api/actions/workflows/buildx-pubtodockerhub.yml/badge.svg)](https://github.com/abes-esr/indexation-sujet-api/actions/workflows/buildx-pubtodockerhub.yml)
+
+> 📌 **Rôle central du dépôt `indexation-sujet-docker`** : Le dépôt [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker) centralise l'état et le stockage de tous les services de la plateforme. En cas d'incident majeur ou de réinstallation complète d'un serveur, la restauration est opérée depuis ce dossier. Pour la restauration de l'application, veuillez vous référer à sa documentation : [indexation-sujet-docker - Procédure de restauration globale](https://github.com/abes-esr/indexation-sujet-docker#8-procédure-de-restauration-globale).
 
 ---
 
 ## 📌 Sommaire
 
-- [Vue d'ensemble & Architecture](#-vue-densemble--architecture)
-- [Fonctionnalités Principales](#-fonctionnalités-principales)
-- [Modèles d'Embedding & Stratégies d'Agrégation](#-modèles-dembedding--stratégies-dagrégation)
-- [Ajustements Sécurité & Corrections Appliquées](#-ajustements-sécurité--corrections-appliquées)
-- [Spécification de l'API](#-spécification-de-lapi)
-- [Installation & Déploiement](#-installation--déploiement)
-- [Structure du Projet & Modules `src/`](#-structure-du-projet--modules-src)
-- [Tests & Évaluation](#-tests--évaluation)
+- [1. Description brève du projet](#1-description-brève-du-projet)
+- [2. Liens vers les autres parties du projet](#2-liens-vers-les-autres-parties-du-projet)
+- [3. Flux entrants / sortants](#3-flux-entrants--sortants)
+- [4. Endpoints & Explication des arguments](#4-endpoints--explication-des-arguments)
+- [5. Explications des variables d'environnement](#5-explications-des-variables-denvironnement)
+- [6. Diagramme d'architecture](#6-diagramme-darchitecture)
+- [7. Procédure de déploiement / d'installation](#7-procédure-de-déploiement--dinstallation)
+- [8. Procédure de supervision](#8-procédure-de-supervision)
+- [9. Procédure de testing](#9-procédure-de-testing)
 
 ---
 
-## 🏗 Vue d'ensemble & Architecture
+## 1. Description brève du projet
 
-Le serveur reçoit les requêtes en provenance d'IHM de catalogage (ex: **WinIBW** via VBScript) ou d'interfaces Web. Il traite la notice bibliographique via une chaîne d'analyse à plusieurs étages :
+**`indexation-sujet-api`** est le service web backend du projet **INDEXATION SUJET** (**I**ndexation **A**utomatique **R**AMEAU), conçu et maintenu par l'**ABES** (Agence Bibliographique de l'Enseignement Supérieur).
 
+Développé avec **FastAPI**, ce composant propose une API REST haute performance qui suggère automatiquement des vedettes-matières **RAMEAU** Unimarc (zone `606`) pour l'indexation de notices bibliographiques (titre, résumé, PPN). Il combine la recherche sémantique vectorielle dense via **Qdrant**, l'extraction multi-modèles d'embeddings Sentence-Transformers (_Victor 1, 2, 3_), le réordonnancement par Cross-Encoder et le filtrage des faux-positifs par Modèle de Langage (_LLM Llama 3.1_).
+
+---
+
+## 2. Liens vers les autres parties du projet
+
+Le projet INDEXATION SUJET est composé de plusieurs modules interdépendants hébergés sur l'organisation [abes-esr](https://github.com/abes-esr) :
+
+| Dépôt GitHub                                                                                     | Rôle & Description                                                                                                                |
+| :----------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker)               | Configuration Docker Compose pour le déploiement complet des conteneurs de la plateforme (API, Qdrant, Ollama/vLLM).              |
+| [**indexation-sujet-api**](https://github.com/abes-esr/indexation-sujet-api)                     | Ce dépôt : API FastAPI exposant le service de suggestion d'indexation sujet.                                                      |
+| [**indexation-sujet-vectorisation**](https://github.com/abes-esr/indexation-sujet-vectorisation) | Scripts de génération des vecteurs d'embeddings RAMEAU et de peuplement des collections Qdrant.                                   |
+| [**indexation-sujet-batch-docker**](https://github.com/abes-esr/indexation-sujet-batch-docker)   | Déploiement Docker pour les traitements par lots et les interfaces de mise à jour des données.                                    |
+| [**indexation-sujet-batch**](https://github.com/abes-esr/indexation-sujet-batch)                 | Extraction, transformation et génération des dumps de données d'autorités RAMEAU et notices Sudoc.                                |
+| [**indexation-sujet-script-winibw**](https://github.com/abes-esr/indexation-sujet-script-winibw) | Script client (VBScript) s'intégrant au logiciel de catalogage **WinIBW** pour interroger l'API depuis le poste des catalogueurs. |
+
+---
+
+## 3. Flux entrants / sortants
+
+### Flux entrants :
+
+- **Requêtes HTTP GET** depuis :
+  - Les clients de catalogage **WinIBW** (via [indexation-sujet-script-winibw](https://github.com/abes-esr/indexation-sujet-script-winibw)).
+  - Des applications web ou scripts tiers de l'ABES (Sudoc, interfaces d'indexation).
+  - La sonde de supervision HTTP (requêtes périodiques sur `/health`).
+- **Fichiers de données (Volumes locaux / montages)** :
+  - Fichiers d'autorités RAMEAU dans [`volumes/csv/`](./volumes/csv/) générés par [indexation-sujet-batch](https://github.com/abes-esr/indexation-sujet-batch) : `rameau_ancestors_df.csv`, `rameau_parents.csv`, `rameau_subdivisionsONLY.csv`.
+
+### Flux sortants :
+
+- **Réponses HTTP REST** : Flux de vedettes RAMEAU Unimarc 606 au format JSON structuré ou texte/HTML plat ou hiérarchique.
+- **Requêtes gRPC / REST vers Qdrant** (port `6333`) : Recherche de similarité par cosinus sur les collections de vecteurs.
+- **Requêtes HTTP REST vers le serveur LLM** (compatible OpenAI API, ex. vLLM / Ollama sur `INDEXATION_SUJET_LLM_URL`) : Filtrage sémantique des propositions.
+- **Flux de logs (stdout/stderr)** : Traitement et collecte centralisée des logs applicatifs par Dozzle et le puits de logs Kibana de l'ABES.
+
+---
+
+## 4. Endpoints & Explication des arguments
+
+### 1. `GET /subject_indexation/` (Indexation sémantique)
+
+Génère la liste ordonnée des vedettes-matières RAMEAU suggérées pour une notice.
+
+| Paramètre          | Type  | Défaut     | Obligatoire | Description                                                                                                                                                                                      |
+| :----------------- | :---- | :--------- | :---------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Title`            | `str` | -          |   **Oui**   | Titre du document à indexer.                                                                                                                                                                     |
+| `Agent`            | `str` | -          |   **Oui**   | Numéro RCR (9 chiffres) ou identifiant de l'établissement demandeur. Contrôlé via la liste blanche des établissements testeurs.                                                                  |
+| `Summary`          | `str` | `""`       |     Non     | Résumé ou texte contextuel du document.                                                                                                                                                          |
+| `docId`            | `str` | `""`       |     Non     | Identifiant du document (ex. PPN de la notice Sudoc).                                                                                                                                            |
+| `models`           | `str` | `None`     |     Non     | Modèles à interroger, séparés par virgules : `victor1_concept`, `victor1_chain`, `victor2`, `victor3_chain`, `victor3_chain_en`, ou `*` pour tous. Par défaut : `victor1_concept,victor3_chain`. |
+| `aggregationType`  | `str` | `None`     |     Non     | Stratégie(s) d'agrégation séparées par virgules : `union`, `intersection`, `intersection2models`, `intersection2models1best`, `cross`, `llm`, `lilimarlene`, `qdrant`, `embbed`.                 |
+| `subjectsMaxCount` | `int` | `5`        |     Non     | Nombre maximum de suggestions retenues par modèle.                                                                                                                                               |
+| `vocabulary`       | `str` | `'rameau'` |     Non     | Vocabulaire contrôlé cible (défaut : `rameau`).                                                                                                                                                  |
+| `Format`           | `str` | `'json'`   |     Non     | Format de la réponse : `json`, `text`, `text_flat`, `text_tree`, `html`, `html_flat`, `html_tree`.                                                                                               |
+
+#### Exemples de requêtes complètes selon l'environnement :
+
+- **Test** :
+  `http://donut-test.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
+- **Production** :
+  `http://donut-prod.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
+
+### 2. `GET /rameau` (Interface de test HTML)
+
+Interface web interactive pour tester les suggestions d'indexation directement dans un navigateur :
+
+- **Test** : `http://donut-test.abes.fr:8071/rameau`
+- **Production** : `http://donut-prod.abes.fr:8071/rameau`
+
+### 3. `GET /health` (Sonde de vie)
+
+Sonde de supervision utilisée par Docker et les outils de surveillance.
+
+- **Réponse HTTP 200** : `{"status": "ok"}`
+
+### 4. `GET /docs` & `GET /redoc` (OpenAPI)
+
+Documentation interactive Swagger UI et ReDoc générée automatiquement par FastAPI :
+
+- **Test** : `http://donut-test.abes.fr:8071/docs`
+- **Production** : `http://donut-prod.abes.fr:8071/docs`
+
+---
+
+## 5. Explications des variables d'environnement
+
+Les variables d'environnement sont gérées de manière centralisée par [`src/config.py`](./src/config.py) et définies dans le fichier `.env` (dérivé de [`.env-dist`](./.env-dist)).
+
+| Variable                         | Description                                                                       | Exemple / Défaut                                        |
+| :------------------------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| `INDEXATION_SUJET_LLM_URL`       | URL de base de l'API LLM (compatible OpenAI API) pour le filtrage sémantique.     | `localhost` (ou `http://indexation-sujet-llm:11434/v1`) |
+| `INDEXATION_SUJET_LLM_KEY`       | Clé d'API secrète pour s'authentifier auprès du service LLM.                      | -                                                       |
+| `INDEXATION_SUJET_LLM_MODEL`     | Nom du modèle LLM à utiliser pour éliminer les mots-clés intrus.                  | `llama-3.1-8b`                                          |
+| `INDEXATION_SUJET_QDRANT_HOST`   | Hôte du serveur de base de données vectorielle Qdrant.                            | `localhost` (ou `indexation-sujet-qdrant`)              |
+| `INDEXATION_SUJET_QDRANT_PORT`   | Port d'écoute de l'instance Qdrant.                                               | `6333`                                                  |
+| `INDEXATION_SUJET_API_HTTP_HOST` | Adresse d'écoute du serveur FastAPI / Uvicorn.                                    | `0.0.0.0`                                               |
+| `INDEXATION_SUJET_API_HTTP_PORT` | Port d'écoute de l'API.                                                           | `8071`                                                  |
+| `INDEXATION_SUJET_CORS_ORIGINS`  | Liste des domaines autorisés pour les requêtes Cross-Origin (CORS).               | `*`                                                     |
+| `ENABLE_GPU`                     | Active l'accélération matérielle CUDA si une carte GPU compatible est disponible. | `true`                                                  |
+
+> 🔒 **Consigne de sécurité** : Ne jamais versionner le fichier `.env` contenant les identifiants ou clés de production.
+
+---
+
+## 6. Diagramme d'architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                         CLIENTS & IHM                                           │
+│   • WinIBW (Catalogueurs Sudoc via indexation-sujet-script-winibw)                                           │
+│   • Applications Web & Navigateurs (/rameau ou API externe)                                     │
+└───────────────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                                │ Requête HTTP GET /subject_indexation/
+                                                ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  indexation-sujet-api (FastAPI : Port 8071)                                  │
+│                                                                                                 │
+│  1. ROUTEUR & FILTRES :                                                                         │
+│     • Validation RCR (liste blanche des établissements testeurs)                                │
+│     • Détection automatique de langue (Langdetect -> Français / Multilingue)                    │
+│                                                                                                 │
+│  2. EXTRACTION VECTORIELLE (Sentence-Transformers) :                                            │
+│     ┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────────────┐  │
+│     │   Victor 1 (all-Mini)  │  │   Victor 2 (distiluse) │  │    Victor 3 (e5-large)         │  │
+│     │   • Concepts RAMEAU    │  │   • Multilingue        │  │    • Multilingue FR / EN       │  │
+│     └───────────┬────────────┘  └───────────┬────────────┘  └───────────────┬────────────────┘  │
+│                 │                           │                               │                   │
+│                 └───────────────────────────┼───────────────────────────────┘                   │
+│                                             │ Recherche K-PPV (Similarité Cosinus)              │
+│                                             ▼                                                   │
+│  3. POST-TRAITEMENTS & AGRÉGATION :                                                             │
+│     • Reranking par Cross-Encoder (mmarco-mMiniLMv2)                                            │
+│     • Consensus / Intersections de modèles (union, cross, intersection2models)                  │
+│     • Structuration hiérarchique RAMEAU (Ancestors / Parents / Subdivisions)                    │
+│     • Filtrage sémantique des intrus via LLM                                                    │
+│                                             │                                                   │
+│  4. FORMATAGE DE SORTIE (Unimarc 606) :     │                                                   │
+│     • Formats disponibles : JSON structuré, Text (Flat/Tree), HTML (Flat/Tree)                  │
+└───────────────▲─────────────────────────────┼─────────────────────────────┬─────────────────────┘
+                │                             │                             │
+                │ Requêtes                    │ Requêtes                    │ Relations
+                │ Vectorielles                │ Filtrage LLM                │ Hiérarchiques
+                ▼                             ▼                             ▼
+┌───────────────────────────────┐ ┌───────────────────────┐ ┌─────────────────────────────────────┐
+│      Qdrant Vector DB         │ │      Service LLM      │ │             Volumes CSV             │
+│        (Port 6333)            │ │ (Port 11434 / distant)│ │          (./volumes/csv/)           │
+│  • concepts_allMin_only_mono  │ │ • Llama 3.1           │ │  • rameau_ancestors_df.csv          │
+│  • concepts_distiluse_only... │ │ • Filtrage sémantique │ │  • rameau_parents.csv               │
+│  • concepts_e5-large_only_mono│ │   des faux-positifs   │ │  • rameau_subdivisionsONLY.csv      │
+└───────────────────────────────┘ └───────────────────────┘ └─────────────────────────────────────┘
+                ▲                                                           ▲
+                │ Logs stdout                                               │ Métriques & Alertes
+                └─────────────────────────────┬─────────────────────────────┘
+                                              ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   SUPERVISION & OBSERVABILITÉ                                   │
+│   • Dozzle (Port 29999) : Consultation des logs conteneurs en temps réel                        │
+│   • Grafana / Kibana (Port 3000) : Puits de logs centralisé ABES (diplotaxis7-*)                │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                       Notice Unimarc                        │
-│                  (Titre, Résumé, PPN, RCR)                  │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ Request GET /subject_indexation/
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    FastAPI Backend Router                   │
-└───────┬──────────────────────┬──────────────────────┬───────┘
-        │                      │                      │
-        ▼                      ▼                      ▼
-┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-│   Victor 1   │       │   Victor 2   │       │   Victor 3   │
-│ (all-MiniLM) │       │ (distiluse)  │       │  (e5-large)  │
-└───────┬──────┘       └───────┬──────┘       └───────┬──────┘
-        │                      │                      │
-        └──────────────────────┼──────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Recherche Vectorielle (Qdrant)                 │
-└──────────────────────────────┬──────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│            Module de Post-Traitements & Agrégation          │
-│   • Intersections & Reranking Cross-Encoder                 │
-│   • Filtrage/Sélection LLM (Llama 3.1 via Ollama/vLLM)      │
-│   • Structuration Hiérarchique RAMEAU (Arborescence/Roots)  │
-└──────────────────────────────┬──────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│             Format de Sortie (Unimarc 606)                  │
-│       Format JSON, HTML (flat/tree) ou Text (flat/tree)     │
-└──────────────────────────────┬──────────────────────────────┘
-```
 
 ---
 
-## ✨ Fonctionnalités Principales
+## 7. Procédure de déploiement / d'installation
 
-1. **Recherche Vectorielle sémantique :** Utilise **Qdrant** (base de données vectorielle) pour l'indexation rapide des concepts et chaînes d'autorités RAMEAU.
-2. **Détection Automatique de Langue :** Si le titre ou le résumé n'est pas en français (`langdetect`), le serveur bascule automatiquement sur des modèles d'embedding multilingues (`victor3_chain_en`).
-3. **Agrégation Intelligente (Consensus & LLM) :** Combine les prédictions de plusieurs modèles par intersection, reranking par Cross-Encoder (`mmarco-mMiniLMv2-L12-H384-v1`), ou exclusion des intrus via un LLM (_Llama 3.1_).
-4. **Mise en forme Unimarc 606 automatisée :**
-   - Génération de lignes `606 ##$3<PPN>$a<Libellé>$2rameau`.
-   - Prise en compte des règles spécifiques de subdivision (`rameau_subdivisionsONLY.csv`).
-   - Structuration arborescente (relation parent/enfant via `rameau_parents.csv` et `rameau_ancestors_df.csv`).
-5. **Restriction par RCR / Établissements Autorisés :** Validation de l'identifiant `Agent` (RCR) par rapport à une liste blanche d'établissements testeurs.
+> ℹ️ **Architecture de déploiement ABES** : Sur les serveurs de test et de production (`donut-test` et `donut-prod`), seul le dépôt [**indexation-sujet-docker**](https://github.com/abes-esr/indexation-sujet-docker) est installé (dans `/opt/pod/indexation-sujet-docker/`). Il instancie l'image Docker précompilée de l'API (`abesesr/indexation-sujet:*-api`). Les procédures ci-dessous décrivent le build local ou l'exécution autonome du code source pour les développeurs.
 
----
+### A. Déploiement avec Docker (Recommandé)
 
-## 🤖 Modèles d'Embedding & Stratégies d'Agrégation
-
-### Modèles IA (_Victor_)
-
-- **`victor1_concept` / `victor1_chain` :** Basé sur `all-MiniLM-L6-v2`.
-- **`victor2` :** Basé sur `distiluse-base-multilingual-cased-v2`.
-- **`victor3_chain` / `victor3_chain_en` :** Basé sur `intfloat/multilingual-e5-large`.
-
-### Stratégies d'Agrégation (`aggregationType`)
-
-- `union` : Union simple des résultats de tous les modèles interrogés.
-- `cross` : Re-classement des propositions (_Reranking_) grâce à un Cross-Encoder.
-
----
-
-## 📡 Spécification de l'API
-
-### Endpoint principal : `GET /subject_indexation/`
-
-#### Paramètres de requête (Query Parameters) :
-
-| Paramètre          | Type  | Défaut     | Description                                                                                     |
-| :----------------- | :---- | :--------- | :---------------------------------------------------------------------------------------------- |
-| `Title`            | `str` | _Requis_   | Titre principal du document.                                                                    |
-| `Summary`          | `str` | `""`       | Résumé ou extrait du document (servant de contexte à l'IA).                                     |
-| `docId`            | `str` | `""`       | Identifiant PPN du document à indexer.                                                          |
-| `models`           | `str` | `None`     | Modèles à utiliser séparés par des virgules (ex: `victor1_concept,victor3_chain` ou `*`).       |
-| `aggregationType`  | `str` | `None`     | Méthode d'agrégation (ex: `cross`, `union`).                                                     |
-| `subjectsMaxCount` | `int` | `5`        | Nombre maximal de sujets retournés par modèle.                                                  |
-| `Agent`            | `str` | _Requis_   | Numéro RCR / Identifiant de l'établissement demandeur.                                          |
-| `Format`           | `str` | `'json'`   | Format de réponse : `json`, `text`.                                                            |
-
----
-
-## 📦 Installation & Déploiement
-
-### 1. Prérequis
-
-- Python 3.10+
-- Une instance **Qdrant** en local (Port `6333`).
-- Accès à un serveur LLM compatible OpenAI API (ex: **Ollama**, **vLLM** ou vLLM ABES) si utilisation d'agrégations LLM.
-
-### 2. Installation via `requirements.txt`
-
-Cloner le dépôt et installer les dépendances Python spécifiées dans le fichier `requirements.txt` :
+Le projet s'exécute de façon conteneurisée via le [`Dockerfile`](./Dockerfile) de l'API ou au sein de la pile globale [indexation-sujet-docker](https://github.com/abes-esr/indexation-sujet-docker).
 
 ```bash
-# Création d'un environnement virtuel (recommandé)
-python -m venv venv
-source venv/bin/activate  # Sur Linux/macOS
-# venv/Scripts/activate  # Sur Windows
+# 1. Cloner le dépôt sur la machine hôte
+git clone https://github.com/abes-esr/indexation-sujet-api.git
+cd indexation-sujet-api
 
-# Installation des paquets
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 3. Configuration de l'environnement (`.env`)
-
-Copier le template `.env-dist` vers `.env` et renseigner les paramètres nécessaires :
-```bash
+# 2. Copier le fichier d'environnement
 cp .env-dist .env
+# 3. Éditer le fichier .env selon l'environnement ciblé (localhost, test ou prod)
+
+# 4. Construire l'image Docker de production
+docker build -t abesesr/indexation-sujet:develop-api --target api-image .
+
+# 5. Lancer le conteneur avec montage des volumes de données CSV
+docker run -d \
+  --name indexation-sujet-api \
+  --restart unless-stopped \
+  -p 8071:8071 \
+  --env-file .env \
+  -v $(pwd)/volumes/csv:/app/data/csv:ro \
+  abesesr/indexation-sujet:develop-api
 ```
 
-### 4. Déploiement avec Docker & Docker Compose (Recommandé)
-
-Pour démarrer l'ensemble des services (API RAMEAU et instance vectorielle Qdrant) :
-```bash
-docker compose up -d --build
-```
-
-### 5. Lancement manuel du serveur Uvicorn (Développement local)
+### B. Installation locale pour le développement
 
 ```bash
+# 1. Création et activation de l'environnement virtuel Python
+python -m venv venv
+# Linux / macOS :
+source venv/bin/activate
+# Windows :
+venv\Scripts\activate
+
+# 2. Installation des dépendances
+pip install --upgrade pip
+pip install torch --index-url https://download.pytorch.org/whl/cu126  # Support CUDA si GPU disponible
+pip install -r requirements.txt
+
+# 3. Téléchargement des ressources NLTK
+python -c "import nltk; nltk.download('wordnet', quiet=True); nltk.download('omw-1.4', quiet=True)"
+
+# 4. Initialisation du fichier .env
+cp .env-dist .env
+# 5. Éditer le fichier .env selon l'environnement ciblé (localhost, test ou prod)
+
+# 6. Démarrage de l'API avec rechargement à chaud
 python -m uvicorn src.rameau:app --host 0.0.0.0 --port 8071 --reload
 ```
 
-L'interface de documentation interactive (Swagger UI) sera disponible sur : `http://localhost:8071/docs`.
-L'interface de test HTML sera accessible sur : `http://localhost:8071/rameau`.
+---
+
+## 8. Procédure de supervision
+
+### 1. Contrôle de l'état du conteneur et des logs
+
+```bash
+# Vérifier l'état du conteneur
+docker ps -f name=indexation-sujet-api
+
+# Visualiser les 100 dernières lignes de logs en direct
+docker logs -f --tail=100 indexation-sujet-api
+```
+
+### 2. Sonde de santé applicative (Healthcheck)
+
+L'état de fonctionnement de l'API est interrogé via son endpoint dédié :
+
+```bash
+curl -f http://localhost:8071/health
+# Réponse attendue : {"status":"ok"}
+```
+
+### 3. Consultation visuelle des logs via Dozzle
+
+Les logs de l'API et de ses dépendances sont consultables en continu via Dozzle :
+
+- **Test** : `http://donut-test.abes.fr:29999/`
+- **Production** : `http://donut-prod.abes.fr:29999/`
+
+### 4. Supervision globale et observabilité
+
+Les métriques systèmes et applicatives sont agrégées sur les serveurs Grafana de l'ABES :
+
+- `http://diplotaxis7-dev.v212.abes.fr:3000`
+- `http://diplotaxis7-test.v202.abes.fr:3000`
+- `http://diplotaxis7-prod.v102.abes.fr:3000`
+
+### 5. Tableaux de bord de la base vectorielle Qdrant
+
+L'état des collections vectorielles et des index de points peut être vérifié sur :
+
+- **Test** : `http://donut-test.abes.fr:6333/dashboard#/collections`
+- **Production** : `http://donut-prod.abes.fr:6333/dashboard#/collections`
 
 ---
 
-## 📁 Structure du Projet & Modules `src/`
+## 9. Procédure de testing
 
-- **`src/rameau.py`** : Point d'entrée principal du serveur Web FastAPI. Définit la route `/subject_indexation/` et orchestre les modèles d'embedding, les agrégations (consensus, cross-encoder, LLM) et la mise en forme Unimarc 606.
-- **`src/config.py`** : Module de configuration centralisée chargeant et typant les variables depuis `.env`.
-- **`src/embed_lib.py`** : Module de recherche vectorielle Qdrant. Fournit la chaîne de nettoyage linguistique native (`simplemma`, `nltk`, `texthero`) et les fonctions d'embedding `embedding_qdrant`.
-- **`src/omk.py`** : Module de prédiction multi-label extrême. Intègre la classification `Omikuji` couplée au vectoriseur TF-IDF et décodage de vedettes RAMEAU.
+La suite de tests et de validation s'articule autour du répertoire [`test/`](./test/) :
 
----
+### 1. Test d'intégration vectorielle Qdrant
 
-## 🧪 Tests & Évaluation
-
-Le dossier [test/](test/) contient les outils d'évaluation de la performance du modèle et de non-régression de l'API.
-
-### 1. Test d'intégration vectorielle (`test_qdrant_integration.py`)
-
-Ce script valide l'intégration de bout en bout de l'API de recherche vectorielle sémantique en se connectant à une instance Qdrant locale. Il utilise le modèle d'embedding par défaut et interroge la collection configurée pour retourner des propositions RAMEAU.
-
-**Exécution :**
+Ce test valide la chaîne complète d'embedding et d'interrogation de la base vectorielle locale :
 
 ```bash
 python test/test_qdrant_integration.py
 ```
 
-### 2. Évaluation de la Justesse sémantique (`test_classification.py` / `.ipynb` & `test_classification_v2.py` / `.ipynb`)
+### 2. Évaluation de la justesse sémantique (Accuracy & Benchmark)
 
-Ces scripts et notebooks Jupyter contiennent le pipeline complet pour évaluer la justesse algorithmique des prédictions RAMEAU. Ils calculent l'exactitude des prédictions (ex: Top-k accuracy) en utilisant des datasets de test dédiés afin de garantir la non-régression de la qualité métier lors des changements de configuration.
+Les scripts et notebooks évaluent l'exactitude des suggestions d'autorités RAMEAU (Top-1, Top-3, Top-5 accuracy) sur un échantillon représentatif de notices du Sudoc afin de prévenir toute régression algorithmique :
 
-**Exécution (sans Jupyter) :**
-Vous pouvez lancer directement les scripts convertis en Python standard :
 ```bash
+# Exécution scriptée autonome
 python test/test_classification.py
-```
 
-**Exécution (avec Jupyter) :**
-Ouvrir les notebooks via Jupyter Lab/Notebook ou VS Code et lancer l'exécution séquentielle des cellules :
-```bash
-# Lancement de Jupyter
+# Version enrichie v2
+python test/test_classification_v2.py
+
+# Exécution interactive via Jupyter Notebook
 jupyter notebook test/test_classification.ipynb
 ```
 
+### 3. Jeux de données de test ([`test/data/`](./test/data/))
 
-### 3. Données de Test (`test/data/`)
-
-- [test_data.csv](test/data/test_data.csv) : Liste des identifiants (PPN) de notices réservés exclusivement à l'évaluation (pour éviter le biais d'entraînement).
-- [test_rameau_export.csv](test/data/test_rameau_export.csv) : Corpus réduit de notices de test (PPN, Titres, vedettes RAMEAU attendues) servant de benchmark pour évaluer la justesse des prédictions.
+- [`test/data/test_data.csv`](./test/data/test_data.csv) : Liste de PPN isolés réservés à l'évaluation pour éviter les biais d'apprentissage.
+- [`test/data/test_rameau_export.csv`](./test/data/test_rameau_export.csv) : Dataset de référence annoté (Titres, Résumés, Vedettes RAMEAU réelles attendues).

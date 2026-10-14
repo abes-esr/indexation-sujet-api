@@ -42,8 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-adress_qdrant = os.getenv("IAR_QDRANT_HOST", os.getenv("QDRANT_HOST", "localhost"))
-port_qdrant = int(os.getenv("IAR_QDRANT_PORT", os.getenv("QDRANT_PORT", 6333)))
+adress_qdrant = os.getenv("INDEXATION_SUJET_QDRANT_HOST", os.getenv("QDRANT_HOST", "localhost"))
+port_qdrant = int(os.getenv("INDEXATION_SUJET_QDRANT_PORT", os.getenv("QDRANT_PORT", 6333)))
                 
 Qdrant_Client = QdrantClient(host=adress_qdrant, port=port_qdrant)
 
@@ -103,9 +103,9 @@ print(sys.getsizeof(get_lang))
 
 #### LLM ###
 
-abes_llama3 = os.getenv('IAR_LLM_URL', os.getenv('ABES_LLM_URL', 'http://iar-llm:11434/v1'))
-key_abes_llama3 = os.getenv('IAR_LLM_KEY', os.getenv('ABES_LLM_KEY', 'ollama'))
-abes_model = os.getenv('IAR_LLM_MODEL', os.getenv('ABES_LLM_MODEL', 'llama-3.1-8b'))
+abes_llama3 = os.getenv('INDEXATION_SUJET_LLM_URL', os.getenv('ABES_LLM_URL', 'http://indexation-sujet-llm:11434/v1'))
+key_abes_llama3 = os.getenv('INDEXATION_SUJET_LLM_KEY', os.getenv('ABES_LLM_KEY', 'ollama'))
+abes_model = os.getenv('INDEXATION_SUJET_LLM_MODEL', os.getenv('ABES_LLM_MODEL', 'llama-3.1-8b'))
 
 # Créer une connexion à un LLM:
 client = OpenAI(
