@@ -876,7 +876,7 @@ function loadRameau() {
 """
 
 #formulaire de depot de la these en pdf
-@app.get("/rameau")
+@app.get("/rameau_form_html")
 async def present_form_rameau():
     return HTMLResponse(rameau_html)
 
