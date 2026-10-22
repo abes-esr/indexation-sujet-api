@@ -66,7 +66,7 @@ Le projet INDEXATION SUJET est composé de plusieurs modules interdépendants h�
 
 ## 4. Endpoints & Explication des arguments
 
-### 1. `GET /subject_indexation/` (Indexation sémantique)
+### 1. `GET /rameau/` (Indexation sémantique)
 
 Génère la liste ordonnée des vedettes-matières RAMEAU suggérées pour une notice.
 
@@ -85,9 +85,9 @@ Génère la liste ordonnée des vedettes-matières RAMEAU suggérées pour une n
 #### Exemples de requêtes complètes selon l'environnement :
 
 - **Test** :
-  `http://donut-test.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
+  `http://donut-test.abes.fr:8071/rameau/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
 - **Production** :
-  `http://donut-prod.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
+  `http://donut-prod.abes.fr:8071/rameau/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree`
 
 ### 2. `GET /rameau` (Interface de test HTML)
 
@@ -139,7 +139,7 @@ Les variables d'environnement sont gérées de manière centralisée par [`src/c
 │   • WinIBW (Catalogueurs Sudoc via indexation-sujet-script-winibw)                                           │
 │   • Applications Web & Navigateurs (/rameau ou API externe)                                     │
 └───────────────────────────────────────────────┬─────────────────────────────────────────────────┘
-                                                │ Requête HTTP GET /subject_indexation/
+                                                │ Requête HTTP GET /rameau/
                                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                  indexation-sujet-api (FastAPI : Port 8071)                                  │
