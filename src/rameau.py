@@ -25,10 +25,10 @@ import ast
 
 
 #avec cross et faiss
-# http://labo-vm-1.v202.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,faiss&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree
+# http://labo-vm-1.v202.abes.fr:8071/rameau?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=union,cross,faiss&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree
 
 #avec llm et gdrant
-# http://labo-vm-1.v202.abes.fr:8071/subject_indexation/?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=intersection2models,llm,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree
+# http://labo-vm-1.v202.abes.fr:8071/rameau?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=intersection2models,llm,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree
 
 
 app = FastAPI()
@@ -42,8 +42,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-adress_qdrant = os.getenv("IAR_QDRANT_HOST", os.getenv("QDRANT_HOST", "localhost"))
-port_qdrant = int(os.getenv("IAR_QDRANT_PORT", os.getenv("QDRANT_PORT", 6333)))
+adress_qdrant = os.getenv("INDEXATION_SUJET_QDRANT_HOST", os.getenv("QDRANT_HOST", "localhost"))
+port_qdrant = int(os.getenv("INDEXATION_SUJET_QDRANT_PORT", os.getenv("QDRANT_PORT", 6333)))
                 
 Qdrant_Client = QdrantClient(host=adress_qdrant, port=port_qdrant)
 
@@ -103,9 +103,9 @@ print(sys.getsizeof(get_lang))
 
 #### LLM ###
 
-abes_llama3 = os.getenv('IAR_LLM_URL', os.getenv('ABES_LLM_URL', 'http://iar-llm:11434/v1'))
-key_abes_llama3 = os.getenv('IAR_LLM_KEY', os.getenv('ABES_LLM_KEY', 'ollama'))
-abes_model = os.getenv('IAR_LLM_MODEL', os.getenv('ABES_LLM_MODEL', 'llama-3.1-8b'))
+abes_llama3 = os.getenv('INDEXATION_SUJET_LLM_URL', os.getenv('ABES_LLM_URL', 'http://indexation-sujet-llm:11434/v1'))
+key_abes_llama3 = os.getenv('INDEXATION_SUJET_LLM_KEY', os.getenv('ABES_LLM_KEY', 'ollama'))
+abes_model = os.getenv('INDEXATION_SUJET_LLM_MODEL', os.getenv('ABES_LLM_MODEL', 'llama-3.1-8b'))
 
 # Créer une connexion à un LLM:
 client = OpenAI(
@@ -474,7 +474,7 @@ def jsonTo606(data, structure, formatt) :
 instruction = "Parmi la liste de mots-clés qui suit, donne-moi la sous-liste des mots-clés qui ne représentent pas le contenu du résumé"
 #instruction = "Parmi la liste de mots-clés qui suit, donne-moi la sous-liste des mots-clés qui ne représentent pas le contenu du résumé, sous la même forme "
 
-@app.get("/subject_indexation/")
+@app.get("/rameau")
 async def index_subjects(Title: str, Summary: str = None, docId: str = '', models: str = None, aggregationType: str = None, vocabulary: str = 'rameau', subjectsMaxCount: int = 5, Agent: str = '', Format: str = 'json',request: Request=None):
     #print(request.headers['user-agent'])
     liste_models = ['victor3_chain', 'victor1_concept','victor1_chain','victor2']  # english model 'victor3_chain_en' not yet in this list
@@ -865,7 +865,7 @@ function loadRameau() {
   xhttp.onload = function() {
     document.getElementById("resu").innerHTML = this.responseText;
   }
-  xhttp.open("GET","https://hub-rdftotal.idref.fr/subject_indexation/?docId=null&Title="+encodeURIComponent(document.getElementById("titre").value)+"&Summary="+encodeURIComponent(document.getElementById("resume").value)+"&models=victor3_chain,omi2,victor1_concept,victor2&aggregationType=intersection2models,llm&subjectsMaxCount="+encodeURIComponent(document.getElementById("hitscount").value)+"&Agent="+document.getElementById("rcr").value+"&vocabulary=rameau&Format=html"
+  xhttp.open("GET","https://hub-rdftotal.idref.fr/rameau?docId=null&Title="+encodeURIComponent(document.getElementById("titre").value)+"&Summary="+encodeURIComponent(document.getElementById("resume").value)+"&models=victor3_chain,omi2,victor1_concept,victor2&aggregationType=intersection2models,llm&subjectsMaxCount="+encodeURIComponent(document.getElementById("hitscount").value)+"&Agent="+document.getElementById("rcr").value+"&vocabulary=rameau&Format=html"
 );
   xhttp.send();
 }
@@ -876,7 +876,7 @@ function loadRameau() {
 """
 
 #formulaire de depot de la these en pdf
-@app.get("/rameau")
+@app.get("/rameau_form_html")
 async def present_form_rameau():
     return HTMLResponse(rameau_html)
 

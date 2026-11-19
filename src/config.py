@@ -1,5 +1,5 @@
 """
-Module de configuration centralisée de l'application IAR-API.
+Module de configuration centralisée de l'application INDEXATION SUJET-API.
 
 Ce module extrait et valide les variables d'environnement en utilisant la bibliothèque
 `python-dotenv`. Il garantit qu'aucun secret (clés API LLM, mots de passe) n'est codé
@@ -29,20 +29,20 @@ class Settings:
     """
 
     # --- Configuration Qdrant ---
-    QDRANT_HOST: str = os.getenv("IAR_QDRANT_HOST", "localhost")
-    QDRANT_PORT: int = int(os.getenv("IAR_QDRANT_PORT", "6333"))
+    QDRANT_HOST: str = os.getenv("INDEXATION_SUJET_QDRANT_HOST", "localhost")
+    QDRANT_PORT: int = int(os.getenv("INDEXATION_SUJET_QDRANT_PORT", "6333"))
 
     # --- Configuration LLM ABES ---
-    ABES_LLM_URL: str = os.getenv("IAR_LLM_URL", "http://iar-llm:11434/v1").strip()
-    ABES_LLM_KEY: str = os.getenv("IAR_LLM_KEY", "").strip()
-    ABES_LLM_MODEL: str = os.getenv("IAR_LLM_MODEL", "llama-3.1-8b").strip()
+    ABES_LLM_URL: str = os.getenv("INDEXATION_SUJET_LLM_URL", "http://indexation-sujet-llm:11434/v1").strip()
+    ABES_LLM_KEY: str = os.getenv("INDEXATION_SUJET_LLM_KEY", "").strip()
+    ABES_LLM_MODEL: str = os.getenv("INDEXATION_SUJET_LLM_MODEL", "llama-3.1-8b").strip()
 
     # --- Configuration Serveur FastAPI ---
-    API_HOST: str = os.getenv("IAR_API_HTTP_HOST", "0.0.0.0")
-    API_PORT: int = int(os.getenv("IAR_API_HTTP_PORT", "8071"))
+    API_HOST: str = os.getenv("INDEXATION_SUJET_API_HTTP_HOST", "0.0.0.0")
+    API_PORT: int = int(os.getenv("INDEXATION_SUJET_API_HTTP_PORT", "8071"))
 
     # --- Sécurité & CORS ---
-    _raw_cors: str = os.getenv("IAR_CORS_ORIGINS", "*")
+    _raw_cors: str = os.getenv("INDEXATION_SUJET_CORS_ORIGINS", "*")
     CORS_ORIGINS: List[str] = [origin.strip() for origin in _raw_cors.split(",") if origin.strip()]
 
     # --- Accélération matérielle (GPU) ---
