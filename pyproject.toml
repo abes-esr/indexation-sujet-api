@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "indexation-sujet-api"
-version = "0.0.3"
+version = "0.0.4-SNAPSHOT"
 description = "Service Web d'Indexation Sujet RAMEAU (API FastAPI)"
 authors = ["ABES"]
 readme = "README.md"
