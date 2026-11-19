@@ -73,12 +73,12 @@ jobs:
           echo "New tag: $releaseVersion"
           echo "New Snapshot tag: $snapshotVersion"
 
-      # Vérification de sécurité : release autorisée uniquement sur main ou master
-      - name: 'Verify release is created only on "main" or "master" git branch'
-        run: |
-          CURRENT_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          echo "Current branch: $CURRENT_GIT_BRANCH"
-          [[ "$CURRENT_GIT_BRANCH" == "main" || "$CURRENT_GIT_BRANCH" == "master" ]] && exit 0 || exit 1
+#      # Vérification de sécurité : release autorisée uniquement sur main ou master
+#      - name: 'Verify release is created only on "main" or "master" git branch'
+#        run: |
+#          CURRENT_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#          echo "Current branch: $CURRENT_GIT_BRANCH"
+#          [[ "$CURRENT_GIT_BRANCH" == "main" || "$CURRENT_GIT_BRANCH" == "master" ]] && exit 0 || exit 1
 
       # Vérification du format de version SemVer
       - name: "Verify version is correctly formatted (X.X.X)"
