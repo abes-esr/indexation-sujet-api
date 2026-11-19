@@ -31,14 +31,26 @@ jobs:
 
       - name: "Determine Docker tag"
         id: determine_tag
+        env:
+          INPUT_CUSTOM_TAG: ${{ inputs.custom_tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF: ${{ github.ref }}
         run: |
-          if [ -n "${{ inputs.custom_tag }}" ]; then
-            echo "tag=${{ inputs.custom_tag }}" >> $GITHUB_OUTPUT
-            exit 0
+          if [ -n "$INPUT_CUSTOM_TAG" ]; then
+            # Validate that custom_tag only contains safe characters for Docker tags
+            if echo "$INPUT_CUSTOM_TAG" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]*$'; then
+              echo "tag=$INPUT_CUSTOM_TAG" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "::error::Invalid custom_tag. Only alphanumeric, hyphen, underscore and dot are allowed, and must start with alphanumeric."
+              exit 1
+            fi
           fi
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_BASE_BRANCH="${{ github.base_ref }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PR_BASE_BRANCH="$BASE_REF"
             echo "PR base branch: $PR_BASE_BRANCH"
             if [ "$PR_BASE_BRANCH" = "main" ]; then
               echo "tag=main" >> $GITHUB_OUTPUT
@@ -50,12 +62,12 @@ jobs:
             exit 0
           fi
 
-          if [ "${{ github.ref_type }}" = "tag" ]; then
+          if [ "$REF_TYPE" = "tag" ]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          BRANCH_NAME=$(echo "${{ github.ref }}" | sed 's/refs\/heads\///')
+          BRANCH_NAME=$(echo "$REF" | sed 's/refs\/heads\///')
           echo "tag=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: "Push: prepare version from git tags/branches"
