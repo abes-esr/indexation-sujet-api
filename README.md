@@ -124,6 +124,7 @@ Les variables d'environnement sont gérées de manière centralisée par [`src/c
 | `INDEXATION_SUJET_QDRANT_PORT`   | Port d'écoute de l'instance Qdrant.                                               | `6333`                                                  |
 | `INDEXATION_SUJET_API_HTTP_HOST` | Adresse d'écoute du serveur FastAPI / Uvicorn.                                    | `0.0.0.0`                                               |
 | `INDEXATION_SUJET_API_HTTP_PORT` | Port d'écoute de l'API.                                                           | `8071`                                                  |
+| `INDEXATION_SUJET_API_ROOT_PATH` | Préfixe de chemin exposé par le reverse proxy (pour `/docs` et `/openapi.json`).  | `""` (local) ou `/api/v1` (test/prod)                   |
 | `INDEXATION_SUJET_CORS_ORIGINS`  | Liste des domaines autorisés pour les requêtes Cross-Origin (CORS).               | `*`                                                     |
 | `ENABLE_GPU`                     | Active l'accélération matérielle CUDA si une carte GPU compatible est disponible. | `true`                                                  |
 
