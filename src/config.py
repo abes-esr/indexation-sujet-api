@@ -40,6 +40,8 @@ class Settings:
     # --- Configuration Serveur FastAPI ---
     API_HOST: str = os.getenv("INDEXATION_SUJET_API_HTTP_HOST", "0.0.0.0")
     API_PORT: int = int(os.getenv("INDEXATION_SUJET_API_HTTP_PORT", "8071"))
+    # Préfixe de chemin exposé par le reverse proxy (ex: /api/v1 en test/prod, vide en local)
+    API_ROOT_PATH: str = os.getenv("INDEXATION_SUJET_API_ROOT_PATH", "").strip()
 
     # --- Sécurité & CORS ---
     _raw_cors: str = os.getenv("INDEXATION_SUJET_CORS_ORIGINS", "*")

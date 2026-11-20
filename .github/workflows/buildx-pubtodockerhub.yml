@@ -13,7 +13,14 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/**"
+  pull_request:
+    branches: [main, test, develop]
   workflow_dispatch:
+    inputs:
+      custom_tag:
+        description: "Custom tag to use for the Docker image"
+        required: false
+        type: string
 
 jobs:
   buildx-test-pubtodockerhub:
@@ -22,22 +29,65 @@ jobs:
       - name: "Build: checkout source code"
         uses: actions/checkout@v6
 
-      - name: "Push: prepare version from git tags/branchs"
+      - name: "Determine Docker tag"
+        id: determine_tag
+        env:
+          INPUT_CUSTOM_TAG: ${{ inputs.custom_tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF: ${{ github.ref }}
+        run: |
+          if [ -n "$INPUT_CUSTOM_TAG" ]; then
+            # Validate that custom_tag only contains safe characters for Docker tags
+            if echo "$INPUT_CUSTOM_TAG" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]*$'; then
+              echo "tag=$INPUT_CUSTOM_TAG" >> $GITHUB_OUTPUT
+              exit 0
+            else
+              echo "::error::Invalid custom_tag. Only alphanumeric, hyphen, underscore and dot are allowed, and must start with alphanumeric."
+              exit 1
+            fi
+          fi
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PR_BASE_BRANCH="$BASE_REF"
+            echo "PR base branch: $PR_BASE_BRANCH"
+            if [ "$PR_BASE_BRANCH" = "main" ]; then
+              echo "tag=main" >> $GITHUB_OUTPUT
+            elif [ "$PR_BASE_BRANCH" = "test" ]; then
+              echo "tag=test" >> $GITHUB_OUTPUT
+            else
+              echo "tag=$PR_BASE_BRANCH" >> $GITHUB_OUTPUT
+            fi
+            exit 0
+          fi
+
+          if [ "$REF_TYPE" = "tag" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BRANCH_NAME=$(echo "$REF" | sed 's/refs\/heads\///')
+          echo "tag=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: "Push: prepare version from git tags/branches"
         id: docker_tag_meta
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.DOCKERHUB_IMAGE_PREFIX }}
+          tags: |
+            type=raw,${{ steps.determine_tag.outputs.tag }}
       - name: "Set up Docker Buildx"
         uses: docker/setup-buildx-action@v4
       - name: "Login to DockerHub"
         uses: docker/login-action@v4
-        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+        if: github.event_name != 'pull_request' || github.base_ref == 'main' || github.base_ref == 'test' || github.ref_type == 'tag'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: "Buildx and push"
         uses: docker/build-push-action@v7
         with:
-          push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/')) }}
+          push: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' || github.base_ref == 'test' || github.ref_type == 'tag' }}
           target: api-image
           tags: ${{ steps.docker_tag_meta.outputs.tags }}-api

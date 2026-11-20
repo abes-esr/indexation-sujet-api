@@ -31,7 +31,9 @@ import ast
 # http://labo-vm-1.v202.abes.fr:8071/rameau?docId=NULL&Title=Alg%C3%A8bre%20vectorielle&Summary=&models=victor1_concept,victor2,victor3_chain&aggregationType=intersection2models,llm,qdrant&subjects&MaxCount=10&Agent=RCR&vocabulary=rameau&Format=text_tree
 
 
-app = FastAPI()
+# Préfixe de chemin exposé par le reverse proxy (ex: /api/v1 en test/prod, vide en local)
+root_path = os.getenv("INDEXATION_SUJET_API_ROOT_PATH", "").strip()
+app = FastAPI(root_path=root_path)
 origins = ['*']
 
 app.add_middleware(

@@ -178,3 +178,12 @@ jobs:
           tag_name: ${{ steps.calculate-version.outputs.releaseVersion }}
           generate_release_notes: true
           token: ${{ secrets.TOKEN_GITHUB_FOR_GITHUB_ACTION }}
+
+      # Déclenchement de la construction et du push de l'image Docker avec le tag latest
+      - name: "Trigger Docker image build with latest tag"
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB_FOR_GITHUB_ACTION }}
+        run: |
+          gh workflow run buildx-pubtodockerhub.yml \
+            --ref ${{ steps.calculate-version.outputs.releaseVersion }} \
+            -f custom_tag=latest
